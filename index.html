@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RetailCalc — Voice Calculator (NGN)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 560px;
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, .25);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #667eea
+        }
+
+        .tag {
+            color: #666;
+            font-size: 13px
+        }
+
+        .display {
+            background: #f7f9fb;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            min-height: 84px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between
+        }
+
+        #currentInput {
+            font-size: 16px;
+            color: #222;
+            min-height: 38px;
+            outline: none
+        }
+
+        #currentInput[contenteditable="true"]:empty:before {
+            content: "Ready to calculate...";
+            color: #9aa3b2
+        }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px
+        }
+
+        .result {
+            font-size: 22px;
+            font-weight: 700;
+            color: #214aef
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 0;
+            cursor: pointer;
+            font-weight: 700
+        }
+
+        .btn-voice {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white
+        }
+
+        .btn-process {
+            background: #f1f5f9;
+            color: #1f2937;
+            border: 2px solid #e6edf6
+        }
+
+        .btn-clear {
+            background: #fff;
+            border: 1px solid #e6edf6;
+            color: #333
+        }
+
+        .btn-delete-history {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            flex: 1
+        }
+
+        .small {
+            font-size: 12px;
+            padding: 8px 10px;
+            border-radius: 8px
+        }
+
+        .status {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 6px;
+            min-height: 18px
+        }
+
+        .history {
+            margin-top: 8px
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            background: #fbfdff;
+            border: 1px solid #eef5ff;
+            cursor: pointer
+        }
+
+        .summary {
+            background: #fbfdff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #eef5ff;
+            color: #333
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .copy-btn {
+            background: #fff;
+            border: 1px solid #e6edf6;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer
+        }
+
+        .muted {
+            color: #8b98a8;
+            font-size: 12px
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 0, 0, 0.08);
+            border-top-color: #667eea;
+            animation: spin .9s linear infinite;
+            display: inline-block
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @media (max-width:520px) {
+            .card {
+                padding: 14px
+            }
+
+            .result {
+                font-size: 20px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card" role="main">
+        <div class="header">
+            <div class="logo">Retailers Calculator</div>
+            <div class="tag">Voice-powered retail calculator — Naira (₦)</div>
+        </div>
+
+        <div class="display" aria-live="polite">
+            <div id="currentInput" contenteditable="true" spellcheck="false" aria-label="Recognized calculation text">
+            </div>
+
+            <div class="result-row">
+                <div class="result" id="result">₦0.00</div>
+                <div class="actions">
+                    <button class="copy-btn small" id="copyResult" title="Copy result">Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-voice" id="voiceButton" aria-pressed="false">Start Listening</button>
+            <button class="btn btn-process" id="processButton">Process now</button>
+            <button class="btn btn-clear" id="clearButton">Clear</button>
+            <button class="btn btn-delete-history" id="deleteHistoryButton"> Delete All History</button>
+        </div>
+
+        <div class="status" id="statusMessage"><span class="muted">Tip:</span> Press <strong>Start Listening</strong>,
+            speak, then wait a moment or press <strong>Process now</strong>.</div>
+
+        <div id="summary" class="summary" style="display:none"></div>
+
+        <div class="history">
+            <div class="muted" style="margin-bottom:6px">Recent calculations</div>
+            <div id="historyList" class="history-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // ------------------ Core Logic ------------------
+        let recognition = null, isRecording = false, transcriptBuffer = '', voiceTimer = null, calcHistory = [];
+        const currentInput = document.getElementById('currentInput');
+        const voiceButton = document.getElementById('voiceButton');
+        const processButton = document.getElementById('processButton');
+        const clearButton = document.getElementById('clearButton');
+        const deleteHistoryButton = document.getElementById('deleteHistoryButton');
+        const status = document.getElementById('statusMessage');
+        const resultEl = document.getElementById('result');
+        const summaryEl = document.getElementById('summary');
+        const historyList = document.getElementById('historyList');
+        const copyBtn = document.getElementById('copyResult');
+        let isEditing = false;
+
+        // --- Speech setup ---
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                status.textContent = 'Speech recognition not supported. Use Chrome or Edge.';
+                voiceButton.disabled = true; return;
+            }
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SR(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-US';
+            recognition.onstart = () => { isRecording = true; voiceButton.textContent = 'Listening... click to stop'; status.innerHTML = '<span class="spinner"></span> Listening...'; transcriptBuffer = ''; };
+            recognition.onresult = (ev) => { let interim = ''; for (let i = ev.resultIndex; i < ev.results.length; i++) { const t = ev.results[i][0].transcript.trim(); if (ev.results[i].isFinal) transcriptBuffer += (t + ' '); else interim += (t + ' '); } if (!isEditing) currentInput.innerText = (interim || transcriptBuffer).trim(); if (voiceTimer) clearTimeout(voiceTimer); voiceTimer = setTimeout(() => { const text = (transcriptBuffer.trim() || interim.trim()).trim(); if (text && !isEditing) processText(text); try { recognition.stop(); } catch (e) { } }, 900); };
+            recognition.onerror = (e) => { status.textContent = 'Error: ' + e.error; stopRecording(); };
+            recognition.onend = () => stopRecording();
+        }
+        voiceButton.onclick = () => { if (!recognition) return; if (isRecording) { try { recognition.stop(); } catch (e) { } } else { transcriptBuffer = ''; try { recognition.start(); } catch (e) { recognition.abort(); recognition.start(); } } };
+        processButton.onclick = () => { const text = currentInput.innerText.trim(); if (!text) { status.textContent = 'Nothing to process.'; return; } processText(text); };
+        clearButton.onclick = () => { currentInput.innerText = ''; resultEl.textContent = '₦0.00'; summaryEl.style.display = 'none'; status.textContent = 'Cleared.'; };
+        deleteHistoryButton.onclick = () => { if (confirm('Are you sure you want to delete all recent calculations?')) { calcHistory = []; renderHistory(); status.textContent = 'All history deleted.'; } };
+
+        // edit protection
+        currentInput.onfocus = () => { isEditing = true; };
+        currentInput.onblur = () => { isEditing = false; };
+        currentInput.onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); processButton.click(); } };
+        copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(resultEl.innerText); status.textContent = 'Result copied.'; } catch (e) { status.textContent = 'Copy failed.'; } };
+        historyList.onclick = (ev) => { const item = ev.target.closest('.history-item'); if (item) { currentInput.innerText = item.dataset.expr; status.textContent = 'Loaded previous expression.'; } };
+
+        // --- Core processing functions (same as before) ---
+        function processText(t) { status.textContent = 'Processing...'; setTimeout(() => { const p = parseAndCalculate(t); if (p.success) { resultEl.textContent = formatCurrency(p.value); summaryEl.style.display = 'block'; summaryEl.textContent = p.summary || ('Result: ' + p.value); addHistory(t, p.value, p.summary); status.textContent = 'Done'; speakResult(p.value); } else { resultEl.textContent = 'Error'; summaryEl.style.display = 'block'; summaryEl.textContent = p.summary || 'Could not parse.'; status.textContent = 'Parse failed.'; } }, 100); }
+        function parseAndCalculate(raw) {
+            if (!raw) return { success: false }; let text = raw.toLowerCase().trim(); text = normalizeOperators(text); text = wordsToNumbersInText(text).replace(/\s+/g, ' ').trim(); const expr = text.replace(/[^0-9+\-*/().% ]/g, '').replace(/\s+/g, ''); if (/[+\-*/]/.test(expr) && (expr.match(/\d+(\.\d+)?/g) || []).length >= 2) { const v = evaluateExpression(expr); if (!isNaN(v)) return { success: true, value: v, summary: `Expression: ${expr} = ${formatRaw(v)}` }; }
+            const nums = extractNumbers(text); let v = NaN, summary = '', success = false; if (nums.length >= 2 && /[+\-*/]/.test(text)) { v = evaluateExpression(expr); success = !isNaN(v); summary = `Expression: ${expr} = ${formatRaw(v)}`; }
+            if (success) return { success, value: v, summary }; return { success: false, summary: 'Try: 100 x 6 + 200 x 3' };
+        }
+        function normalizeOperators(s) { return s.replace(/\b(multiplied by|multiply by|times|multiply)\b/g, ' * ').replace(/\b(divided by|divide by|over)\b/g, ' / ').replace(/\b(plus|add)\b/g, ' + ').replace(/\b(minus|subtract)\b/g, ' - ').replace(/(\d)\s*[x×]\s*(\d)/g, '$1 * $2').replace(/\s[xX]\s/g, ' * '); }
+        function wordsToNumbersInText(t) { const w = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety', 'hundred', 'thousand', 'million']; const r = new RegExp('\\b(?:(?:' + w.join('|') + ')(?:[\\s-]+|$))+\\b', 'gi'); return t.replace(r, m => { const n = wordsToNumber(m); return isNaN(n) ? m : String(n); }); }
+        function wordsToNumber(p) { const s = { 'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90 }; const sc = { 'hundred': 100, 'thousand': 1000, 'million': 1e6 }; const toks = p.toLowerCase().split(/[\s-]+/); let total = 0, cur = 0; for (const t of toks) { if (s[t] != null) cur += s[t]; else if (sc[t] != null) { if (cur === 0) cur = 1; cur *= sc[t]; if (sc[t] >= 1000) { total += cur; cur = 0; } } else return NaN; } return total + cur; }
+        function extractNumbers(t) { const m = t.match(/\d+(\.\d+)?/g); return m ? m.map(parseFloat) : []; }
+        function evaluateExpression(e) { try { return Function('"use strict";return(' + e + ')')(); } catch { return NaN; } }
+        function formatCurrency(n) { return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n); }
+        function formatRaw(n) { return Number(n).toFixed(2); }
+        function addHistory(expr, val, sum) { calcHistory.unshift({ expr, val, sum }); if (calcHistory.length > 8) calcHistory.pop(); renderHistory(); }
+        function renderHistory() { historyList.innerHTML = ''; calcHistory.forEach(h => { const d = document.createElement('div'); d.className = 'history-item'; d.dataset.expr = h.expr; d.innerHTML = `<div style="font-size:13px;color:#1f2937">${h.expr.length > 48 ? h.expr.slice(0, 48) + '...' : h.expr}</div><div style="font-weight:700;color:#214aef">${formatCurrency(h.val)}</div>`; historyList.appendChild(d); }); }
+        function speakResult(v) { if (!('speechSynthesis' in window)) return; const u = new SpeechSynthesisUtterance(`Result ${v.toFixed(2)} naira`); u.rate = 0.95; speechSynthesis.speak(u); }
+        function stopRecording() { isRecording = false; voiceButton.textContent = 'Start Listening'; status.textContent = 'Stopped.'; }
+        document.addEventListener('DOMContentLoaded', () => { initSpeechRecognition(); status.textContent = 'Ready — press Start Listening or type expression.'; });
+    </script>
+</body>
+
+</html>
